@@ -1,7 +1,7 @@
 # Audio Visualization
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-[![Build](https://github.com/your-org/audio-visualization/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/your-org/audio-visualization/actions/workflows/ci.yml)
+[![Build](https://github.com/Karethoth/AudioVisualization/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Karethoth/AudioVisualization/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Audio Visualization** is an early-stage exploration of an audio-reactive overlay intended for streaming software such as OBS. The project currently acts as a sandbox for planning and prototyping ideas captured in `TODO.md`
