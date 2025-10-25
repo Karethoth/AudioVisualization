@@ -32,6 +32,9 @@
             </StackPanel>
             <TextBlock Text="{Binding CurrentLevelDecibels, StringFormat='Level: {0:F1} dBFS'}" FontSize="18" HorizontalAlignment="Center" />
             <ProgressBar Minimum="-120" Maximum="0" Value="{Binding CurrentLevelDecibels}" Width="240" Height="20" />
+            <Border Width="480" Height="200" BorderThickness="1" BorderBrush="#555" Background="#101418" CornerRadius="4">
+                <Image Source="{Binding SpectrumBitmap}" Stretch="Fill" />
+            </Border>
         </StackPanel>
     </Grid>
 </Window>

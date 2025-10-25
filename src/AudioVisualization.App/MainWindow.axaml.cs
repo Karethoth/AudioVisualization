@@ -3,6 +3,8 @@ using AudioVisualization.App.ViewModels;
 using AudioVisualization.Audio;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using MathNet.Numerics.IntegralTransforms;
+using Complex32 = MathNet.Numerics.Complex32;
 
 namespace AudioVisualization.App;
 
@@ -11,6 +13,11 @@ public partial class MainWindow : Window
     private IAudioInputSource? _audioInputSource;
     private readonly MainWindowViewModel _viewModel;
     private const float MinimumDecibels = -120f;
+    private const int FftSize = 1024;
+    private const float SpectrumFloorDecibels = -90f;
+    private readonly Complex32[] _fftBuffer = new Complex32[FftSize];
+    private readonly float[] _fftWindow = CreateHannWindow(FftSize);
+    private readonly float[] _spectrumBuffer = new float[FftSize / 2];
 
     public MainWindow()
     {
@@ -141,8 +148,13 @@ public partial class MainWindow : Window
         }
 
         var decibelLevel = CalculateDecibelLevel(e.Buffer, e.SampleCount);
+        var spectrumLength = CalculateSpectrum(e.Buffer, e.SampleCount, e.Channels, _spectrumBuffer);
 
-        Dispatcher.UIThread.Post(() => _viewModel.UpdateLevels(decibelLevel));
+        Dispatcher.UIThread.Post(() =>
+        {
+            _viewModel.UpdateLevels(decibelLevel);
+            _viewModel.UpdateSpectrum(_spectrumBuffer.AsSpan(0, spectrumLength));
+        });
     }
 
     private static float CalculateDecibelLevel(float[] buffer, int sampleCount)
@@ -174,5 +186,71 @@ public partial class MainWindow : Window
         decibels = Math.Clamp(decibels, MinimumDecibels, 0f);
 
         return decibels;
+    }
+
+    private int CalculateSpectrum(float[] buffer, int sampleCount, int channels, float[] target)
+    {
+        if (channels <= 0)
+        {
+            channels = 1;
+        }
+
+        var frames = sampleCount / channels;
+        var usableFrames = Math.Min(frames, FftSize);
+
+        for (var i = 0; i < usableFrames; i++)
+        {
+            var sample = buffer[i * channels];
+            _fftBuffer[i] = new Complex32(sample * _fftWindow[i], 0f);
+        }
+
+        for (var i = usableFrames; i < FftSize; i++)
+        {
+            _fftBuffer[i] = Complex32.Zero;
+        }
+
+        Fourier.Forward(_fftBuffer, FourierOptions.Matlab);
+
+        var halfSize = Math.Min(target.Length, FftSize / 2);
+        var scale = 1f / FftSize;
+
+        for (var i = 0; i < halfSize; i++)
+        {
+            var magnitude = _fftBuffer[i].Magnitude * scale;
+            var db = magnitude <= 1e-9f
+                ? SpectrumFloorDecibels
+                : 20f * MathF.Log10(magnitude);
+
+            if (db < SpectrumFloorDecibels)
+            {
+                db = SpectrumFloorDecibels;
+            }
+
+            var normalized = (db - SpectrumFloorDecibels) / -SpectrumFloorDecibels;
+            target[i] = Math.Clamp(normalized, 0f, 1f);
+        }
+
+        return halfSize;
+    }
+
+    private static float[] CreateHannWindow(int size)
+    {
+        var window = new float[size];
+        if (size <= 1)
+        {
+            if (size == 1)
+            {
+                window[0] = 1f;
+            }
+            return window;
+        }
+
+        var factor = 2f * MathF.PI / (size - 1);
+        for (var i = 0; i < size; i++)
+        {
+            window[i] = 0.5f * (1f - MathF.Cos(factor * i));
+        }
+
+        return window;
     }
 }
