@@ -2,7 +2,7 @@
 
 - [x] Choose UI framework: Avalonia on .NET 8 for cross-platform UI.
 - [x] Scaffold Avalonia solution structure (sln, main app project, shared libraries).
-- [ ] Prototype audio input pipeline using NAudio/CSCore for Windows, define abstraction for other platforms.
+- [x] Prototype audio input pipeline using NAudio for Windows and provide cross-platform abstraction.
 - [ ] Design effect graph data model (nodes, connections, parameters) and choose serialization format (JSON with schema versioning).
 - [ ] Identify MVP node set (audio source, FFT analyzer, band splitter, gain, colorizer, image overlay, alpha/green screen, output compositor).
 - [ ] Spike a headless engine that executes effect graphs and produces RGBA frames.

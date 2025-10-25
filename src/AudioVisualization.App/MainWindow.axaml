@@ -2,8 +2,36 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:AudioVisualization.App.ViewModels"
+        xmlns:audio="using:AudioVisualization.Audio"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-    x:Class="AudioVisualization.App.MainWindow"
-    Title="AudioVisualization">
-    Welcome to Avalonia!
+        x:Class="AudioVisualization.App.MainWindow"
+        Title="AudioVisualization">
+    <Grid>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" x:DataType="vm:MainWindowViewModel">
+            <TextBlock Text="Audio Visualization Prototype" FontSize="24" HorizontalAlignment="Center" />
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                <TextBlock Text="Capture Mode:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding CaptureModes}" SelectedItem="{Binding SelectedCaptureMode}" Width="180">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="audio:AudioInputCaptureMode">
+                            <TextBlock Text="{Binding}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                <TextBlock Text="Input Device:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}" Width="320">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="audio:AudioDeviceInfo">
+                            <TextBlock Text="{Binding DisplayName}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+            <TextBlock Text="{Binding CurrentLevelDecibels, StringFormat='Level: {0:F1} dBFS'}" FontSize="18" HorizontalAlignment="Center" />
+            <ProgressBar Minimum="-120" Maximum="0" Value="{Binding CurrentLevelDecibels}" Width="240" Height="20" />
+        </StackPanel>
+    </Grid>
 </Window>
