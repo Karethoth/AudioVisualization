@@ -1,4 +1,5 @@
 using System;
+using AudioVisualization.App.Processing;
 using AudioVisualization.App.ViewModels;
 using AudioVisualization.Audio;
 using Avalonia.Controls;
@@ -12,11 +13,10 @@ public partial class MainWindow : Window
 {
     private IAudioInputSource? _audioInputSource;
     private readonly MainWindowViewModel _viewModel;
-    private const float MinimumDecibels = -120f;
     private const int FftSize = 1024;
     private const float SpectrumFloorDecibels = -90f;
     private readonly Complex32[] _fftBuffer = new Complex32[FftSize];
-    private readonly float[] _fftWindow = CreateHannWindow(FftSize);
+    private readonly float[] _fftWindow = SignalMetrics.CreateHannWindow(FftSize);
     private readonly float[] _spectrumBuffer = new float[FftSize / 2];
 
     public MainWindow()
@@ -58,7 +58,7 @@ public partial class MainWindow : Window
         {
             Console.WriteLine(ex);
             _viewModel.ReplaceDevices(Array.Empty<AudioDeviceInfo>());
-            _viewModel.UpdateLevels(MinimumDecibels);
+            _viewModel.UpdateLevels(SignalMetrics.MinimumDecibels);
         }
     }
 
@@ -101,7 +101,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             Console.WriteLine(ex);
-            _viewModel.UpdateLevels(MinimumDecibels);
+            _viewModel.UpdateLevels(SignalMetrics.MinimumDecibels);
 
             if (source is not null)
             {
@@ -137,7 +137,7 @@ public partial class MainWindow : Window
         _audioInputSource.Dispose();
         _audioInputSource = null;
 
-        _viewModel.UpdateLevels(MinimumDecibels);
+        _viewModel.UpdateLevels(SignalMetrics.MinimumDecibels);
     }
 
     private void HandleAudioBufferReady(object? sender, AudioBufferReadyEventArgs e)
@@ -147,7 +147,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var decibelLevel = CalculateDecibelLevel(e.Buffer, e.SampleCount);
+        var decibelLevel = SignalMetrics.CalculateDecibelLevel(e.Buffer, e.SampleCount);
         var spectrumLength = CalculateSpectrum(e.Buffer, e.SampleCount, e.Channels, _spectrumBuffer);
 
         Dispatcher.UIThread.Post(() =>
@@ -155,37 +155,6 @@ public partial class MainWindow : Window
             _viewModel.UpdateLevels(decibelLevel);
             _viewModel.UpdateSpectrum(_spectrumBuffer.AsSpan(0, spectrumLength));
         });
-    }
-
-    private static float CalculateDecibelLevel(float[] buffer, int sampleCount)
-    {
-        var length = Math.Min(buffer.Length, sampleCount);
-        if (length <= 0)
-        {
-            return MinimumDecibels;
-        }
-
-        double sumSquares = 0;
-        for (var i = 0; i < length; i++)
-        {
-            var sample = buffer[i];
-            sumSquares += sample * sample;
-        }
-
-        var mean = sumSquares / length;
-        if (mean <= 0 || double.IsNaN(mean) || double.IsInfinity(mean))
-        {
-            return MinimumDecibels;
-        }
-
-        var rms = Math.Sqrt(mean);
-        var decibels = rms <= 0
-            ? MinimumDecibels
-            : (float)(20 * Math.Log10(rms));
-
-        decibels = Math.Clamp(decibels, MinimumDecibels, 0f);
-
-        return decibels;
     }
 
     private int CalculateSpectrum(float[] buffer, int sampleCount, int channels, float[] target)
@@ -233,24 +202,4 @@ public partial class MainWindow : Window
         return halfSize;
     }
 
-    private static float[] CreateHannWindow(int size)
-    {
-        var window = new float[size];
-        if (size <= 1)
-        {
-            if (size == 1)
-            {
-                window[0] = 1f;
-            }
-            return window;
-        }
-
-        var factor = 2f * MathF.PI / (size - 1);
-        for (var i = 0; i < size; i++)
-        {
-            window[i] = 0.5f * (1f - MathF.Cos(factor * i));
-        }
-
-        return window;
-    }
 }
